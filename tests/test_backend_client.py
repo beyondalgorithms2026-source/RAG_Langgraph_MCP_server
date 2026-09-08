@@ -218,6 +218,34 @@ class BackendClientTests(unittest.TestCase):
         self.assertEqual(opener.health_calls, 2)
         self.assertEqual(opener.ask_calls, 0)
 
+    def test_client_normalizes_socket_timeout_without_posting(self) -> None:
+        settings = Settings(
+            backend_base_url="https://example.onrender.com",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        class TimedOutOpener(_MockOpener):
+            def open(self, req, timeout=0):  # noqa: ANN001
+                self.health_calls += 1
+                raise TimeoutError("socket timed out")
+
+        opener = TimedOutOpener()
+        client.opener = opener
+        clock = [0.0]
+        client._monotonic = lambda: clock[0]
+        client._sleep = lambda seconds: clock.__setitem__(0, clock[0] + seconds)
+
+        with self.assertRaisesRegex(BackendError, "Timed out"):
+            client.ask({"question": "What is the answer?"})
+        self.assertGreater(opener.health_calls, 1)
+        self.assertEqual(opener.ask_calls, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

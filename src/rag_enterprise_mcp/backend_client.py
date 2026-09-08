@@ -71,6 +71,8 @@ class BackendClient:
                 last_error = f"Backend remained unavailable while waking (HTTP {exc.code})."
             except error.URLError as exc:
                 last_error = f"Failed to reach backend while waiting for readiness: {exc.reason}"
+            except TimeoutError:
+                last_error = "Timed out while waiting for the backend to finish waking."
 
             remaining = deadline - self._monotonic()
             if remaining <= 0:
