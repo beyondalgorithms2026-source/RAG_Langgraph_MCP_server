@@ -3,7 +3,8 @@ from __future__ import annotations
 import io
 import json
 import unittest
-from urllib.error import HTTPError
+from urllib import request
+from urllib.error import HTTPError, URLError
 
 from rag_enterprise_mcp.backend_client import BackendClient
 from rag_enterprise_mcp.config import Settings
@@ -63,6 +64,26 @@ class _MockOpener:
 
 
 class BackendClientTests(unittest.TestCase):
+    def test_client_opener_uses_the_persistent_cookie_jar(self) -> None:
+        settings = Settings(
+            backend_base_url="http://127.0.0.1:8000",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        cookie_processors = [
+            handler
+            for handler in client.opener.handlers
+            if isinstance(handler, request.HTTPCookieProcessor)
+        ]
+        self.assertEqual(len(cookie_processors), 1)
+        self.assertIs(cookie_processors[0].cookiejar, client.cookie_jar)
+
     def test_client_retries_after_local_dev_login(self) -> None:
         settings = Settings(
             backend_base_url="http://127.0.0.1:8000",
@@ -249,6 +270,185 @@ class BackendClientTests(unittest.TestCase):
             client.ask({"question": "What is the answer?"})
         self.assertGreater(opener.health_calls, 1)
         self.assertEqual(opener.ask_calls, 0)
+
+    def test_readiness_backoff_doubles_and_caps_at_ten_seconds(self) -> None:
+        settings = Settings(
+            backend_base_url="https://example.onrender.com",
+            backend_timeout_seconds=37.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        class AlwaysWakingOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                self.health_calls += 1
+                return _MockResponse(raw=b"<p>service waking up</p>")
+
+        opener = AlwaysWakingOpener()
+        client.opener = opener
+        clock = [0.0]
+        sleeps: list[float] = []
+        client._monotonic = lambda: clock[0]
+
+        def advance(seconds: float) -> None:
+            sleeps.append(seconds)
+            clock[0] += seconds
+
+        client._sleep = advance
+        with self.assertRaises(BackendError):
+            client.ask({"question": "Q"})
+
+        self.assertEqual(sleeps, [1.0, 2.0, 4.0, 8.0, 10.0, 10.0, 2.0])
+        self.assertEqual(opener.health_calls, 7)
+
+    def test_successful_readiness_check_is_cached_across_requests(self) -> None:
+        settings = Settings(
+            backend_base_url="http://127.0.0.1:8000",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        class ReadyOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                if req.full_url.endswith("/health"):
+                    self.health_calls += 1
+                    return _MockResponse({"status": "ok"})
+                if req.full_url.endswith("/ask"):
+                    self.ask_calls += 1
+                    return _MockResponse({"answer": "Grounded answer"})
+                raise AssertionError(f"Unexpected URL {req.full_url}")
+
+        opener = ReadyOpener()
+        client.opener = opener
+
+        client.ask({"question": "first"})
+        client.ask({"question": "second"})
+
+        self.assertEqual(opener.health_calls, 1)
+        self.assertEqual(opener.ask_calls, 2)
+
+    def test_authentication_retry_happens_at_most_once(self) -> None:
+        settings = Settings(
+            backend_base_url="http://127.0.0.1:8000",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="reader@example.test",
+            backend_dev_login_password="password",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        class AlwaysUnauthorizedOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                if req.full_url.endswith("/health"):
+                    self.health_calls += 1
+                    return _MockResponse({"status": "ok"})
+                if req.full_url.endswith("/auth/local-dev-login"):
+                    self.login_calls += 1
+                    return _MockResponse({"user": {"email": "reader@example.test"}})
+                if req.full_url.endswith("/ask"):
+                    self.ask_calls += 1
+                    raise HTTPError(
+                        req.full_url, 401, "Unauthorized", hdrs=None, fp=io.BytesIO(b"")
+                    )
+                raise AssertionError(f"Unexpected URL {req.full_url}")
+
+        opener = AlwaysUnauthorizedOpener()
+        client.opener = opener
+        with self.assertRaises(BackendError) as ctx:
+            client.ask({"question": "Q"})
+
+        self.assertEqual(ctx.exception.status_code, 401)
+        self.assertEqual(opener.login_calls, 1)
+        self.assertEqual(opener.ask_calls, 2)
+
+    def test_bearer_token_is_sent_and_disables_dev_login(self) -> None:
+        settings = Settings(
+            backend_base_url="https://backend.example.test",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="test-bearer",
+            backend_dev_login_email="reader@example.test",
+            backend_dev_login_password="password",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+        client._backend_ready = True
+        seen_headers: list[str | None] = []
+
+        class RecordingOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                seen_headers.append(req.get_header("Authorization"))
+                return _MockResponse({"answer": "A"})
+
+        client.opener = RecordingOpener()
+        client.ask({"question": "Q"})
+
+        self.assertEqual(seen_headers, ["Bearer test-bearer"])
+        self.assertFalse(client._can_attempt_dev_login())
+
+    def test_post_url_error_is_normalized(self) -> None:
+        settings = Settings(
+            backend_base_url="https://backend.example.test",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+        client._backend_ready = True
+
+        class UnreachableOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                raise URLError("connection refused")
+
+        client.opener = UnreachableOpener()
+        with self.assertRaisesRegex(BackendError, "connection refused"):
+            client.search({"question": "Q"})
+
+    def test_non_transient_health_error_preserves_nested_detail(self) -> None:
+        settings = Settings(
+            backend_base_url="https://backend.example.test",
+            backend_timeout_seconds=5.0,
+            backend_bearer_token="",
+            backend_dev_login_email="",
+            backend_dev_login_password="",
+            server_name="test",
+            server_version="0.1.0",
+        )
+        client = BackendClient(settings)
+
+        class ForbiddenHealthOpener(_MockOpener):
+            def open(self, req, timeout=0):
+                raise HTTPError(
+                    req.full_url,
+                    403,
+                    "Forbidden",
+                    hdrs=None,
+                    fp=io.BytesIO(b'{"detail":{"message":"Access denied"}}'),
+                )
+
+        client.opener = ForbiddenHealthOpener()
+        with self.assertRaisesRegex(BackendError, "Access denied") as ctx:
+            client.ask({"question": "Q"})
+        self.assertEqual(ctx.exception.status_code, 403)
+
+    def test_wake_response_detection_is_narrow_and_case_insensitive(self) -> None:
+        self.assertTrue(BackendClient._is_wake_response("SERVICE WAKING UP"))
+        self.assertTrue(BackendClient._is_wake_response("<!doctype html><title>Render</title>"))
+        self.assertFalse(BackendClient._is_wake_response("<html>generic proxy failure</html>"))
 
 
 if __name__ == "__main__":
