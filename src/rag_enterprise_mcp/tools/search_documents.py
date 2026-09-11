@@ -5,7 +5,6 @@ from typing import Any
 from rag_enterprise_mcp.backend_client import BackendClient
 from rag_enterprise_mcp.schemas.backend import SearchDocumentsInput
 
-
 SEARCH_DOCUMENTS_TOOL = {
     "name": "search_documents",
     "description": "Search the enterprise RAG backend for relevant document chunks. Results stay subject to backend retrieval policy and ACL trimming.",
@@ -14,7 +13,10 @@ SEARCH_DOCUMENTS_TOOL = {
         "properties": {
             "question": {"type": "string"},
             "k": {"type": "integer", "minimum": 1, "maximum": 50, "default": 8},
-            "mode": {"type": "string", "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"]},
+            "mode": {
+                "type": "string",
+                "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"],
+            },
             "filters": {"type": "object"},
             "deep_research": {"type": "boolean", "default": False},
             "custom_query": {"type": "string"},
@@ -40,4 +42,3 @@ def run(client: BackendClient, arguments: dict[str, Any]) -> dict[str, Any]:
         "results": response.get("results", []),
         "debug_info": response.get("debug_info"),
     }
-

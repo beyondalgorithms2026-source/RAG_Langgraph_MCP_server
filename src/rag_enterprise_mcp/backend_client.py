@@ -4,7 +4,7 @@ import json
 import time
 from http.cookiejar import CookieJar
 from typing import Any
-from urllib import error, parse, request
+from urllib import error, request
 
 from rag_enterprise_mcp.config import Settings
 from rag_enterprise_mcp.exceptions import BackendError
@@ -55,18 +55,24 @@ class BackendClient:
                     payload = json.loads(content) if content else {}
                 except json.JSONDecodeError:
                     if not self._is_wake_response(content):
-                        raise BackendError("Backend health check returned a non-JSON response.")
+                        raise BackendError(
+                            "Backend health check returned a non-JSON response."
+                        ) from None
                     last_error = "Backend did not finish waking before the configured timeout."
                 else:
                     if isinstance(payload, dict) and payload.get("status") == "ok":
                         self._backend_ready = True
                         return
-                    raise BackendError("Backend health check did not report status 'ok'.", payload=payload)
+                    raise BackendError(
+                        "Backend health check did not report status 'ok'.", payload=payload
+                    )
             except error.HTTPError as exc:
                 if exc.code not in {502, 503, 504}:
                     payload = self._decode_error_payload(exc)
                     raise BackendError(
-                        self._error_message(exc.code, payload), status_code=exc.code, payload=payload
+                        self._error_message(exc.code, payload),
+                        status_code=exc.code,
+                        payload=payload,
                     ) from exc
                 last_error = f"Backend remained unavailable while waking (HTTP {exc.code})."
             except error.URLError as exc:
@@ -80,12 +86,21 @@ class BackendClient:
             self._sleep(min(delay_seconds, remaining))
             delay_seconds = min(delay_seconds * 2, 10.0)
 
-    def _request_json(self, method: str, path: str, payload: dict[str, Any] | None = None, *, retry_on_auth: bool = True) -> dict[str, Any]:
+    def _request_json(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        retry_on_auth: bool = True,
+    ) -> dict[str, Any]:
         body = None if payload is None else json.dumps(payload).encode("utf-8")
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if self.settings.backend_bearer_token:
             headers["Authorization"] = "Bearer " + self.settings.backend_bearer_token
-        req = request.Request(self.settings.backend_base_url + path, data=body, headers=headers, method=method)
+        req = request.Request(
+            self.settings.backend_base_url + path, data=body, headers=headers, method=method
+        )
         try:
             with self.opener.open(req, timeout=self.settings.backend_timeout_seconds) as response:
                 content = response.read().decode("utf-8")
@@ -95,9 +110,15 @@ class BackendClient:
             if exc.code == 401 and retry_on_auth and self._can_attempt_dev_login():
                 self._login_local_dev()
                 return self._request_json(method, path, payload, retry_on_auth=False)
-            raise BackendError(self._error_message(exc.code, payload_data), status_code=exc.code, payload=payload_data) from exc
+            raise BackendError(
+                self._error_message(exc.code, payload_data),
+                status_code=exc.code,
+                payload=payload_data,
+            ) from exc
         except error.URLError as exc:
-            raise BackendError(f"Failed to reach backend at {self.settings.backend_base_url}: {exc.reason}") from exc
+            raise BackendError(
+                f"Failed to reach backend at {self.settings.backend_base_url}: {exc.reason}"
+            ) from exc
 
     def _can_attempt_dev_login(self) -> bool:
         return (

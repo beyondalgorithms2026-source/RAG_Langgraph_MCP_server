@@ -19,7 +19,7 @@ class Settings:
     server_version: str
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         timeout_raw = _env("RAG_BACKEND_TIMEOUT_SECONDS", "30")
         try:
             timeout_value = float(timeout_raw)
@@ -34,4 +34,3 @@ class Settings:
             server_name=_env("MCP_SERVER_NAME", "rag-enterprise-mcp"),
             server_version=_env("MCP_SERVER_VERSION", "0.1.0"),
         )
-

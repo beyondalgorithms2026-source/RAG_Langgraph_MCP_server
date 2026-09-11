@@ -8,9 +8,7 @@ from typing import Any, Callable
 from rag_enterprise_mcp.backend_client import BackendClient
 from rag_enterprise_mcp.config import Settings
 from rag_enterprise_mcp.exceptions import BackendError, ValidationError
-from rag_enterprise_mcp.tools import TOOLS
-from rag_enterprise_mcp.tools import ask_grounded, get_document_excerpt, search_documents
-
+from rag_enterprise_mcp.tools import TOOLS, ask_grounded, get_document_excerpt, search_documents
 
 ToolHandler = Callable[[BackendClient, dict[str, Any]], dict[str, Any]]
 SUPPORTED_PROTOCOL_VERSIONS = (
@@ -106,7 +104,9 @@ class StdioJsonRpcServer:
             return self._success(
                 request_id,
                 {
-                    "content": [{"type": "text", "text": json.dumps(detail, indent=2, sort_keys=True)}],
+                    "content": [
+                        {"type": "text", "text": json.dumps(detail, indent=2, sort_keys=True)}
+                    ],
                     "structuredContent": detail,
                     "isError": True,
                 },
@@ -116,7 +116,9 @@ class StdioJsonRpcServer:
                 "message": str(exc),
                 "traceback": traceback.format_exc(),
             }
-            return self._tool_error(request_id, json.dumps(detail, indent=2, sort_keys=True), code=-32603)
+            return self._tool_error(
+                request_id, json.dumps(detail, indent=2, sort_keys=True), code=-32603
+            )
 
     @staticmethod
     def _success(request_id: Any, result: dict[str, Any]) -> dict[str, Any]:

@@ -5,7 +5,6 @@ from typing import Any
 from rag_enterprise_mcp.backend_client import BackendClient
 from rag_enterprise_mcp.schemas.backend import AskGroundedInput
 
-
 ASK_GROUNDED_TOOL = {
     "name": "ask_grounded",
     "description": "Ask the enterprise RAG backend for a grounded answer with citations. Uses backend retrieval, ACL trimming, and answer generation without bypassing them.",
@@ -14,7 +13,10 @@ ASK_GROUNDED_TOOL = {
         "properties": {
             "question": {"type": "string", "description": "The user question to answer."},
             "k_chunks": {"type": "integer", "minimum": 1, "maximum": 20, "default": 6},
-            "mode": {"type": "string", "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"]},
+            "mode": {
+                "type": "string",
+                "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"],
+            },
             "filters": {"type": "object"},
             "deep_research": {"type": "boolean", "default": False},
             "custom_query": {"type": "string"},
@@ -42,4 +44,3 @@ def run(client: BackendClient, arguments: dict[str, Any]) -> dict[str, Any]:
         "mode": response.get("mode"),
         "debug_info": response.get("debug_info"),
     }
-

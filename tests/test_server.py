@@ -26,7 +26,17 @@ class ServerTests(unittest.TestCase):
             server_version="0.1.0",
         )
         server = StdioJsonRpcServer(settings)
-        with patch.object(server.client, "ask", return_value={"answer": "A", "citations": [], "used_chunks_count": 1, "latency_ms": 10, "mode": "hybrid"}):
+        with patch.object(
+            server.client,
+            "ask",
+            return_value={
+                "answer": "A",
+                "citations": [],
+                "used_chunks_count": 1,
+                "latency_ms": 10,
+                "mode": "hybrid",
+            },
+        ):
             response = server._dispatch(
                 {
                     "jsonrpc": "2.0",
@@ -45,7 +55,10 @@ class ServerTests(unittest.TestCase):
         stdin_buffer = io.BytesIO(raw)
         stdout_buffer = io.BytesIO()
 
-        with patch("sys.stdin", _BufferWrapper(stdin_buffer)), patch("sys.stdout", _BufferWrapper(stdout_buffer)):
+        with (
+            patch("sys.stdin", _BufferWrapper(stdin_buffer)),
+            patch("sys.stdout", _BufferWrapper(stdout_buffer)),
+        ):
             settings = Settings(
                 backend_base_url="http://127.0.0.1:8000",
                 backend_timeout_seconds=5.0,

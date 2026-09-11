@@ -5,7 +5,6 @@ from typing import Any
 from rag_enterprise_mcp.backend_client import BackendClient
 from rag_enterprise_mcp.schemas.backend import GetDocumentExcerptInput
 
-
 GET_DOCUMENT_EXCERPT_TOOL = {
     "name": "get_document_excerpt",
     "description": "Retrieve one narrow excerpt via the backend search API, scoped to a known document or locator when possible. This does not bypass backend permissions.",
@@ -17,7 +16,11 @@ GET_DOCUMENT_EXCERPT_TOOL = {
             "source_part_id": {"type": "integer"},
             "locator_filter": {"type": "string"},
             "metadata_filters": {"type": "object"},
-            "mode": {"type": "string", "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"], "default": "keyword"},
+            "mode": {
+                "type": "string",
+                "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"],
+                "default": "keyword",
+            },
             "max_chars": {"type": "integer", "minimum": 100, "maximum": 4000, "default": 1200},
         },
         "required": ["question"],
@@ -46,4 +49,3 @@ def run(client: BackendClient, arguments: dict[str, Any]) -> dict[str, Any]:
         "excerpt": top_result.get("snippet"),
         "result": top_result,
     }
-

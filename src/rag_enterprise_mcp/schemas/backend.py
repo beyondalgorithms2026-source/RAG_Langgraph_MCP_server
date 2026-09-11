@@ -80,7 +80,7 @@ class SearchFilters:
         return cleaned or None
 
     @classmethod
-    def from_input(cls, payload: Any) -> "SearchFilters | None":
+    def from_input(cls, payload: Any) -> SearchFilters | None:
         if payload is None:
             return None
         if not isinstance(payload, dict):
@@ -109,7 +109,7 @@ class AskGroundedInput:
     force_rare_keyword_scan: bool = False
 
     @classmethod
-    def from_input(cls, payload: dict[str, Any]) -> "AskGroundedInput":
+    def from_input(cls, payload: dict[str, Any]) -> AskGroundedInput:
         question = _optional_str(payload.get("question"))
         if not question:
             raise ValidationError("question is required.")
@@ -161,7 +161,7 @@ class SearchDocumentsInput:
     debug: bool = False
 
     @classmethod
-    def from_input(cls, payload: dict[str, Any]) -> "SearchDocumentsInput":
+    def from_input(cls, payload: dict[str, Any]) -> SearchDocumentsInput:
         question = _optional_str(payload.get("question"))
         if not question:
             raise ValidationError("question is required.")
@@ -209,7 +209,7 @@ class GetDocumentExcerptInput:
     metadata_filters: dict[str, str] | None = None
 
     @classmethod
-    def from_input(cls, payload: dict[str, Any]) -> "GetDocumentExcerptInput":
+    def from_input(cls, payload: dict[str, Any]) -> GetDocumentExcerptInput:
         question = _optional_str(payload.get("question"))
         if not question:
             raise ValidationError("question is required.")
@@ -217,7 +217,9 @@ class GetDocumentExcerptInput:
         source_part_id = _optional_int(payload.get("source_part_id"))
         locator_filter = _optional_str(payload.get("locator_filter"))
         if source_id is None and source_part_id is None and locator_filter is None:
-            raise ValidationError("At least one of source_id, source_part_id, or locator_filter is required.")
+            raise ValidationError(
+                "At least one of source_id, source_part_id, or locator_filter is required."
+            )
         max_chars = int(payload.get("max_chars", 1200))
         if max_chars < 100 or max_chars > 4000:
             raise ValidationError("max_chars must be between 100 and 4000.")
@@ -248,4 +250,3 @@ class GetDocumentExcerptInput:
             "expand_neighbors": False,
             "force_rare_keyword_scan": False,
         }
-

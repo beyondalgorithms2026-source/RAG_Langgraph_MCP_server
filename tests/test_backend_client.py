@@ -18,7 +18,7 @@ class _MockResponse:
     def read(self) -> bytes:
         return self.raw if self.raw is not None else json.dumps(self.payload).encode("utf-8")
 
-    def __enter__(self) -> "_MockResponse":
+    def __enter__(self) -> _MockResponse:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
@@ -31,7 +31,7 @@ class _MockOpener:
         self.ask_calls = 0
         self.health_calls = 0
 
-    def open(self, req, timeout=0):  # noqa: ANN001
+    def open(self, req, timeout=0):
         if req.full_url.endswith("/health"):
             self.health_calls += 1
             return _MockResponse({"status": "ok"})
@@ -113,11 +113,13 @@ class BackendClientTests(unittest.TestCase):
         client = BackendClient(settings)
 
         class WakeThenReadyOpener(_MockOpener):
-            def open(self, req, timeout=0):  # noqa: ANN001
+            def open(self, req, timeout=0):
                 if req.full_url.endswith("/health"):
                     self.health_calls += 1
                     if self.health_calls < 3:
-                        return _MockResponse(raw=b"<!doctype html><p>SERVICE WAKING UP</p><p>APPLICATION LOADING</p>")
+                        return _MockResponse(
+                            raw=b"<!doctype html><p>SERVICE WAKING UP</p><p>APPLICATION LOADING</p>"
+                        )
                     return _MockResponse({"status": "ok"})
                 if req.full_url.endswith("/ask"):
                     self.ask_calls += 1
@@ -148,7 +150,7 @@ class BackendClientTests(unittest.TestCase):
         client = BackendClient(settings)
 
         class UnexpectedHtmlOpener(_MockOpener):
-            def open(self, req, timeout=0):  # noqa: ANN001
+            def open(self, req, timeout=0):
                 self.health_calls += 1
                 return _MockResponse(raw=b"<html><body>Proxy configuration error</body></html>")
 
@@ -172,11 +174,13 @@ class BackendClientTests(unittest.TestCase):
         client = BackendClient(settings)
 
         class UnavailableThenReadyOpener(_MockOpener):
-            def open(self, req, timeout=0):  # noqa: ANN001
+            def open(self, req, timeout=0):
                 if req.full_url.endswith("/health"):
                     self.health_calls += 1
                     if self.health_calls == 1:
-                        raise HTTPError(req.full_url, 503, "Unavailable", hdrs=None, fp=io.BytesIO(b""))
+                        raise HTTPError(
+                            req.full_url, 503, "Unavailable", hdrs=None, fp=io.BytesIO(b"")
+                        )
                     return _MockResponse({"status": "ok"})
                 if req.full_url.endswith("/ask"):
                     self.ask_calls += 1
@@ -203,7 +207,7 @@ class BackendClientTests(unittest.TestCase):
         client = BackendClient(settings)
 
         class AlwaysWakingOpener(_MockOpener):
-            def open(self, req, timeout=0):  # noqa: ANN001
+            def open(self, req, timeout=0):
                 self.health_calls += 1
                 return _MockResponse(raw=b"<!doctype html><p>APPLICATION LOADING</p>")
 
@@ -231,7 +235,7 @@ class BackendClientTests(unittest.TestCase):
         client = BackendClient(settings)
 
         class TimedOutOpener(_MockOpener):
-            def open(self, req, timeout=0):  # noqa: ANN001
+            def open(self, req, timeout=0):
                 self.health_calls += 1
                 raise TimeoutError("socket timed out")
 
