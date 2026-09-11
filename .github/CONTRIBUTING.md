@@ -8,6 +8,13 @@ The runtime is deliberately pure Python standard library. Do not add a runtime d
 without explicit approval; `dependencies = []` in `pyproject.toml` is an architectural
 contract rather than an unfinished dependency list.
 
+Read [`AGENTS.md`](../AGENTS.md) and the canonical
+[B004 engineering standard](https://github.com/beyondalgorithms2026-source/RAG_ENTERPRISE_LANGGRAPH_APP/blob/main/docs/ENGINEERING_STANDARDS.md)
+before changing the repository. The local guide contains enough essential information
+for safe work when APP is unavailable. Preserve the stricter instruction where guidance
+overlaps, and do not describe guidance as enforced unless a named CI or test check
+mechanically verifies it.
+
 ## Development setup
 
 Use Python 3.12 for development while preserving the package's Python 3.9 compatibility.
@@ -46,6 +53,13 @@ Changes to tool schemas or backend payloads must include contract-focused tests 
 valid input, invalid input, and backend failure behaviour. Preserve structured JSON-RPC
 errors and the distinctions between authentication, timeout, transport, and validation
 failures.
+
+P12 is APP's fast mocked evaluation-harness smoke test. P12B is the authoritative real
+APP → MCP → STARTER → PostgreSQL/pgvector 25-question gate. Quality-sensitive MCP changes
+must include the applicable P12B evidence; fake-driven MCP tests do not prove live
+retrieval or SQL ACL enforcement. Baselines must never be automatically overwritten
+after a regression, and every baseline change must be explicit, justified, and
+owner/CODEOWNER-reviewed.
 
 ## Protected branch policy
 
