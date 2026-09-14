@@ -46,8 +46,8 @@ jobs:
     with:
       candidate: mcp
       candidate_ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      # P18 calibration remains non-baseline-blocking until the APP v2
-      # baseline is explicitly approved after ten valid runs.
+      # Calibration records performance breaches without promoting them; it
+      # remains non-baseline-blocking until ten valid runs support approval.
       mode: calibration
       run_quality: ${{ needs.scope.outputs.relevant == 'true' }}
     secrets:
