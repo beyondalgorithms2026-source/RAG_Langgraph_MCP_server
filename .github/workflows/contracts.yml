@@ -9,14 +9,14 @@ jobs:
   contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: beyondalgorithms2026-source/RAG_ENTERPRISE_LANGGRAPH_APP
           path: app
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: mcp
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: beyondalgorithms2026-source/RAG_ENTERPRISE_STARTER
           path: starter
