@@ -67,6 +67,8 @@ class SearchFilters:
     source_part_id: int | None = None
     locator_filter: str | None = None
     metadata_filters: dict[str, str] | None = None
+    # Corpus names the backend restricts retrieval to; it can only narrow access.
+    corpus: list[str] | None = None
 
     def to_backend(self) -> dict[str, Any] | None:
         payload = {
@@ -75,6 +77,7 @@ class SearchFilters:
             "source_part_id": self.source_part_id,
             "locator_filter": self.locator_filter,
             "metadata_filters": self.metadata_filters,
+            "corpus": self.corpus,
         }
         cleaned = {key: value for key, value in payload.items() if value not in (None, "", {})}
         return cleaned or None
@@ -91,6 +94,7 @@ class SearchFilters:
             source_part_id=_optional_int(payload.get("source_part_id")),
             locator_filter=_optional_str(payload.get("locator_filter")),
             metadata_filters=_string_map(payload.get("metadata_filters")),
+            corpus=_string_list(payload.get("corpus")) or None,
         )
 
 
@@ -207,6 +211,7 @@ class GetDocumentExcerptInput:
     max_chars: int = 1200
     mode: str | None = "keyword"
     metadata_filters: dict[str, str] | None = None
+    corpus: list[str] | None = None
 
     @classmethod
     def from_input(cls, payload: dict[str, Any]) -> GetDocumentExcerptInput:
@@ -231,6 +236,7 @@ class GetDocumentExcerptInput:
             max_chars=max_chars,
             mode=_optional_str(payload.get("mode")) or "keyword",
             metadata_filters=_string_map(payload.get("metadata_filters")),
+            corpus=_string_list(payload.get("corpus")) or None,
         )
 
     def to_search_backend(self) -> dict[str, Any]:
@@ -243,6 +249,7 @@ class GetDocumentExcerptInput:
                 source_part_id=self.source_part_id,
                 locator_filter=self.locator_filter,
                 metadata_filters=self.metadata_filters,
+                corpus=self.corpus,
             ).to_backend(),
             "debug": False,
             "deep_research": False,

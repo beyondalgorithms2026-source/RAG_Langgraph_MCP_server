@@ -16,6 +16,7 @@ GET_DOCUMENT_EXCERPT_TOOL = {
             "source_part_id": {"type": "integer"},
             "locator_filter": {"type": "string"},
             "metadata_filters": {"type": "object"},
+            "corpus": {"type": "array", "items": {"type": "string"}},
             "mode": {
                 "type": "string",
                 "enum": ["vector", "keyword", "hybrid", "graph_hybrid", "full"],

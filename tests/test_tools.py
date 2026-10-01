@@ -82,6 +82,30 @@ class ToolTests(unittest.TestCase):
         self.assertTrue(payload["deep_research"])
         self.assertTrue(payload["dry_run"])
 
+    def test_corpus_scope_is_forwarded_by_all_three_tools(self) -> None:
+        client = _FakeClient()
+        scope = {"corpus": [" western_northline ", ""]}
+        ask_grounded.run(client, {"question": "Q", "filters": scope})
+        search_documents.run(client, {"question": "Q", "filters": {**scope, "source_id": 4}})
+        get_document_excerpt.run(client, {"question": "Q", "source_id": 4, **scope})
+
+        self.assertEqual(client.ask_payloads[0]["filters"], {"corpus": ["western_northline"]})
+        self.assertEqual(
+            client.search_payloads[0]["filters"], {"source_id": 4, "corpus": ["western_northline"]}
+        )
+        self.assertEqual(
+            client.search_payloads[1]["filters"], {"source_id": 4, "corpus": ["western_northline"]}
+        )
+
+    def test_empty_corpus_scope_is_not_forwarded(self) -> None:
+        client = _FakeClient()
+        ask_grounded.run(client, {"question": "Q", "filters": {"corpus": [], "source_id": 2}})
+        self.assertEqual(client.ask_payloads[0]["filters"], {"source_id": 2})
+
+    def test_corpus_scope_must_be_a_list(self) -> None:
+        with self.assertRaisesRegex(ValidationError, "list of strings"):
+            ask_grounded.run(_FakeClient(), {"question": "Q", "filters": {"corpus": "western"}})
+
     def test_ask_grounded_requires_question(self) -> None:
         client = _FakeClient()
         with self.assertRaisesRegex(ValidationError, "question is required"):
