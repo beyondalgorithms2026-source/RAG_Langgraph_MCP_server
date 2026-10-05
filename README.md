@@ -35,7 +35,10 @@ control or citation rules — because it has no mechanism to.
 | `get_document_excerpt` | A verbatim excerpt from a specific document |
 
 `ask_grounded` accepts eleven parameters describing *what* to look for — question, mode,
-candidate count, filters, anchor terms, neighbour expansion and so on.
+candidate count, filters, anchor terms, neighbour expansion and so on. Filters may include an
+optional `corpus` list (also accepted by `get_document_excerpt`), which limits a request to
+one synthetic company's documents; the backend ANDs it onto its access control, so it can
+only narrow what a caller retrieves.
 
 It deliberately does **not** expose *how* retrieval behaves. Reranking, query rewriting,
 expansion and fusion strategy are server-side settings an operator manages in the
@@ -54,8 +57,8 @@ asymmetry is the point.
 ## Implementation
 
 Pure Python standard library — no third-party runtime dependencies. The MCP protocol is
-implemented directly over stdio. The current B004 closeout branch reports **39/39**
-offline MCP tests passing.
+implemented directly over stdio. The offline suite on `main` reports **42/42** tests
+passing.
 
 ```bash
 pip install -e .
