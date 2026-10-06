@@ -67,6 +67,10 @@ pip install -e .
 It is launched automatically by the agent application, which spawns it as a child
 process; you do not normally run it by hand.
 
+## How this was built
+
+AI tools assisted with drafting, implementation and review. The linked source, tests and evaluation evidence show what was checked; AI-generated suggestions are not treated as proof of correctness.
+
 ## Licence
 
 Apache-2.0.
