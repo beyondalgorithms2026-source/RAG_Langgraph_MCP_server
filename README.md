@@ -8,11 +8,20 @@ directly.
 **[Governed RAG — agent layer](https://github.com/beyondalgorithms2026-source/RAG_ENTERPRISE_LANGGRAPH_APP)**
 · **[Public demo](https://rag-enterprise-governance-demo.onrender.com/app)**
 · **[Evaluation evidence](https://beyondalgorithms2026-source.github.io/RAG_ENTERPRISE_LANGGRAPH_APP/evaluation/)**
+· **[Data layer (STARTER)](https://github.com/beyondalgorithms2026-source/RAG_ENTERPRISE_STARTER)**
+· **[Northline demo scorecard](https://github.com/beyondalgorithms2026-source/RAG_ENTERPRISE_STARTER/blob/main/docs/evaluation/western/scorecard.md)**
 
-The approved evidence remains the 25/25 v1 baseline. A separate 90-case v2 candidate
-snapshot records 82 passed, 3 failed and 5 manual-review cases; it is disclosed but not
-promoted. Security evidence records 18 deterministic defenses plus two live backend
-controls, with 20/20 defended.
+The hosted demo answers with Claude Haiku 5.5 (since 12 Oct 2026) and embeds with OpenAI
+`text-embedding-3-small`; this server makes no model calls. All documents are synthetic, for two
+fictional companies. The Northline demo set scores 19 of 20 on Claude Haiku 5.5 (14 Oct 2026); it is
+20 questions run once, not a benchmark. The approved evidence remains the 25/25 v1 baseline (gpt-4o-mini, 12 Sep 2026). A separate
+90-case v2 candidate snapshot (gpt-4o-mini, 17 Sep 2026) records 82 passed, 3 failed and 5
+manual-review cases; it is disclosed but not promoted. Security evidence records 18 deterministic
+defenses plus two live full-stack access-control checks in CI, with 20/20 defended (release
+17 Sep 2026).
+
+The live demo runs this server at commit `f8e891d` (pinned in the agent repository's
+`scripts/render_build.sh`); later commits on `main` change only CI and documentation.
 
 ## What problem this solves
 
@@ -47,7 +56,7 @@ asymmetry is the point.
 
 ## What this is NOT
 
-- Not a standalone public service. It runs as the agent application's child process in
+- Not a production or client deployment, and not a standalone public service. It runs as the agent application's child process in
   the self-built portfolio demo, with no client deployment, real users or production
   workload evidence.
 - Not a general-purpose MCP server. It speaks to one backend, over stdio, as a child
