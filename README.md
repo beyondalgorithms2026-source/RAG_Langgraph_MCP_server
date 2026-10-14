@@ -9,10 +9,12 @@ directly.
 · **[Public demo](https://rag-enterprise-governance-demo.onrender.com/app)**
 · **[Evaluation evidence](https://beyondalgorithms2026-source.github.io/RAG_ENTERPRISE_LANGGRAPH_APP/evaluation/)**
 
-The approved evidence remains the 25/25 v1 baseline. A separate 90-case v2 candidate
-snapshot records 82 passed, 3 failed and 5 manual-review cases; it is disclosed but not
-promoted. Security evidence records 18 deterministic defenses plus two live backend
-controls, with 20/20 defended.
+The hosted demo answers with Claude Haiku 5.5 (since 12 Oct 2026); this server makes no model
+calls. The approved evidence remains the 25/25 v1 baseline (gpt-4o-mini, 12 Sep 2026). A separate
+90-case v2 candidate snapshot (gpt-4o-mini, 17 Sep 2026) records 82 passed, 3 failed and 5
+manual-review cases; it is disclosed but not promoted. Security evidence records 18 deterministic
+defenses plus two live full-stack access-control checks in CI, with 20/20 defended (release
+17 Sep 2026).
 
 ## What problem this solves
 
